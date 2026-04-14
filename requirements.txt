@@ -1,0 +1,6 @@
+discord.py[voice]==2.7.1
+yt-dlp
+python-dotenv
+requests
+PyNaCl==1.5.0
+aiohttp
