@@ -9,7 +9,7 @@ import re
 import aiohttp
 from datetime import datetime, timedelta, timezone
 
-# FORZATURA DIRETTA - Sappiamo che il file è qui grazie al test di prima
+
 try:
     discord.opus.load_opus('/usr/local/lib/libopus.so')
     print("✅ OPUS CARICATO CON SUCCESSO!")
@@ -20,11 +20,11 @@ except Exception as e:
 queues = {}
 raid_mode = False  # Inizializzazione necessaria per il sistema anti-raid
 
-# --- 1. VARIABILE DA METTERE ALL'INIZIO (Sotto le altre variabili globali) ---
+
 # Serve per tenere traccia della velocità dei messaggi per utente
 user_spam_counter = {} 
 
-# Forza il caricamento del file .env nella cartella corrente
+
 path_env = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path=path_env)
 
@@ -32,14 +32,14 @@ DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 WEATHER_KEY = os.getenv('WEATHER_API_KEY')
 PROXY_KEY = os.getenv('PROXYCHECK_KEY')
 
-# TEST DI CONTROLLO (Ti dirà subito se il problema è risolto)
+
 if DISCORD_TOKEN is None:
     print("❌ ERRORE: Il file .env esiste ma non riesco a leggere 'DISCORD_TOKEN'.")
     print(f"Percorso cercato: {path_env}")
 else:
     print("✅ Token caricato correttamente!")
 
-# Configurazione permessi Discord
+
 intents = discord.Intents.default()
 intents.members = True  # Necessario per info utenti e join
 intents.message_content = True
@@ -129,19 +129,17 @@ async def play(ctx, *, search: str):
                 url = info['url']
                 title = info['title']
                 
-                # Creazione della sorgente audio
+              
                 source = await discord.FFmpegOpusAudio.from_probe(url, executable="ffmpeg", **FFMPEG_OPTIONS)
                 
                 guild_id = ctx.guild.id
                 
                 if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
-                    # Se il bot sta già suonando, aggiungiamo alla coda
-                    if guild_id not in queues:
+                  if guild_id not in queues:
                         queues[guild_id] = []
                     queues[guild_id].append((source, title))
                     await ctx.send(f"🎵 **{title}** aggiunto alla coda!")
                 else:
-                    # Se il bot è libero, suona subito
                     ctx.voice_client.play(source, after=lambda e: check_queue(ctx, guild_id))
                     await ctx.send(f"🎶 In riproduzione: **{title}**")
                     
@@ -198,15 +196,15 @@ async def clear(ctx, amount: int):
     if amount < 1:
         return await ctx.send("Devi cancellare almeno 1 messaggio!")
     
-    # +1 serve per cancellare anche il comando !clear appena inviato
+   
     deleted = await ctx.channel.purge(limit=amount + 1)
     
-    # Invia un messaggio di conferma che si autodistrugge dopo 5 secondi
+   
     msg = await ctx.send(f"✅ Ho eliminato {len(deleted)-1} messaggi, capo!")
     await asyncio.sleep(5)
     await msg.delete()
 
-# Gestione errore se l'utente non ha i permessi
+
 @clear.error
 async def clear_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
@@ -220,7 +218,6 @@ async def clear_error(ctx, error):
 
 @bot.event
 async def on_member_ban(guild, user):
-    # Cerca un canale chiamato 'sicurezza' o 'logs'
     channel = discord.utils.get(guild.text_channels, name="logs-bot")
     if channel:
         await channel.send(f"🚨 **ALLERTA SICUREZZA:** L'utente {user.name} è stato bannato! Possibile intrusione neutralizzata.")
@@ -238,18 +235,18 @@ async def on_guild_role_create(role):
 async def status(ctx):
     """Controlla la velocità di risposta di Gorlock e lo stato del server"""
     
-    # Calcola la latenza in millisecondi
+    
     lat_ms = round(bot.latency * 1000)
     
-    # Determina lo stato in base alla velocità
+    
     if lat_ms < 100:
-        colore = "🟢" # Ottimo
+        colore = "🟢" 
         desc = "SISTEMI OTTIMIZZATI. Gorlock è pronto a distruggere."
     elif lat_ms < 250:
-        colore = "🟡" # Accettabile
+        colore = "🟡" 
         desc = "RALLENTAMENTO RILEVATO. Possibile sovraccarico dati."
     else:
-        colore = "🔴" # Critico
+        colore = "🔴" 
         desc = "EMERGENZA. Latenza elevata, connessione instabile!"
 
     await ctx.send(
@@ -271,7 +268,7 @@ async def on_member_join(member):
         try:
             await member.send("Spiacente, il server è attualmente in modalità sicurezza.")
             await member.kick(reason="Anti-Raid Attivo")
-            return # Ferma l'esecuzione se lo espelle
+            return 
         except:
             await member.kick(reason="Anti-Raid Attivo")
             return
@@ -309,7 +306,7 @@ async def on_guild_role_update(before, after):
 
 
 
-# --- 3. LOGICA IDS DA INSERIRE DENTRO IL TUO on_message ---
+# --- LOGICA IDS DA INSERIRE DENTRO IL TUO on_message ---
 
 @bot.event
 async def on_message(message):
@@ -346,7 +343,6 @@ async def on_message(message):
 
     # --- ANTI-LINK & URL SAFETY ---
     forbidden_keywords = [".exe", "gift", "nitro", "free-coins", "discord.gg/"]
-    # Regex migliorata per catturare anche link che iniziano direttamente con www.
     urls = re.findall(r'(https?://\S+|www\.\S+)', message.content.lower())
     is_forbidden = any(k in message.content.lower() for k in forbidden_keywords)
     
@@ -385,7 +381,7 @@ async def on_message(message):
             await log_channel.send(f"🛡️ **Sicurezza:** Link rimosso da {message.author.mention}")
         return
 
-    # Processa i comandi (necessario una sola volta alla fine)
+    
     await bot.process_commands(message)
 
 async def check_url_safety(url):
@@ -407,7 +403,7 @@ async def on_message_delete(message):
     if message.author.bot:
         return
     
-    # Se il messaggio conteneva menzioni di utenti
+   
     if message.mentions:
         log_channel = discord.utils.get(message.guild.text_channels, name="logs-bot")
         if log_channel:
